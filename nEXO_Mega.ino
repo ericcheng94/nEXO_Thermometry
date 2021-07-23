@@ -7,22 +7,21 @@
 #include <ArduinoRS485.h> // ArduinoModbus depends on the ArduinoRS485 library
 #include <ArduinoModbus.h>
 
-#define PIN_CS 39
-const byte charTable[10] = {
-    B01111110, B00110000, B01101101, B01111001, B00110011, B01011011, B01011111, B01110000, B01111111, B01111011};
-const byte ledSeg[8] = {
-    B00001000, B00000111, B00000110, B00000101, B00000100, B00000011, B00000010, B00000001 
-};
-#define DECODEMODE_ADDR (0x09)
-#define BRIGHTNESS_ADDR (0x0A)
-#define SCANLIMIT_ADDR (0x0B)
-#define SHUTDOWN_ADDR (0X0C)
-#define DISPLAYTEST_ADDR (0x0F)
-#define OP_OFF (0x0)
-#define OP_ON (0x1)
-#define LED0 (B00001000
-#define BTN_1 37 // Display Push button 1
-#define BTN_2 35 // Display Push button 2
+//#define PIN_CS 39
+//const byte charTable[10] = {
+//    B01111110, B00110000, B01101101, B01111001, B00110011, B01011011, B01011111, B01110000, B01111111, B01111011};
+//const byte ledSeg[8] = {
+//    B00001000, B00000111, B00000110, B00000101, B00000100, B00000011, B00000010, B00000001 
+//};
+//#define DECODEMODE_ADDR (0x09)
+//#define BRIGHTNESS_ADDR (0x0A)
+//#define SCANLIMIT_ADDR (0x0B)
+//#define SHUTDOWN_ADDR (0X0C)
+//#define DISPLAYTEST_ADDR (0x0F)
+//#define OP_OFF (0x0)
+//#define OP_ON (0x1)
+//#define BTN_1 37 // Display Push button 1
+//#define BTN_2 35 // Display Push button 2
 
 Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(53);
 // Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(49);
@@ -108,9 +107,8 @@ void setup() {
 
   EthernetClient client = ethServer.available();
 
-  modbusTCPServer.accept(client);
+//  modbusTCPServer.accept(client);
 
-/*  
   // listen for incoming clients
   while (!client) {
     client = ethServer.available();
@@ -121,30 +119,29 @@ void setup() {
     }
     delay(1000);
   }
-  */
 
-  pinMode(PIN_CS, OUTPUT);
-  pinMode(BTN_1, INPUT);
-  pinMode(BTN_2, INPUT);
-  digitalWrite(PIN_CS, HIGH);
-  SPI.begin(); 
-  //SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));  
-  spiWrite(DISPLAYTEST_ADDR, OP_OFF);
-  //we go into shutdown-mode on startup
-  spiWrite(SHUTDOWN_ADDR, OP_OFF);
-  //scanlimit is set to max on startup
-  spiWrite(SCANLIMIT_ADDR, 7); // show 8 digits
-  //decode is done in raw mode
-  spiWrite(DECODEMODE_ADDR, 0);
-  //clearSegments
-  spiWrite(SHUTDOWN_ADDR,OP_ON);
-  // set brightness
-  spiWrite(BRIGHTNESS_ADDR, 5);
+//  pinMode(PIN_CS, OUTPUT);
+//  pinMode(BTN_1, INPUT);
+//  pinMode(BTN_2, INPUT);
+//  digitalWrite(PIN_CS, HIGH);
+//  SPI.begin(); 
+//  //SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));  
+//  spiWrite(DISPLAYTEST_ADDR, OP_OFF);
+//  //we go into shutdown-mode on startup
+//  spiWrite(SHUTDOWN_ADDR, OP_OFF);
+//  //scanlimit is set to max on startup
+//  spiWrite(SCANLIMIT_ADDR, 7); // show 8 digits
+//  //decode is done in raw mode
+//  spiWrite(DECODEMODE_ADDR, 0);
+//  //clearSegments
+//  spiWrite(SHUTDOWN_ADDR,OP_ON);
+//  // set brightness
+//  spiWrite(BRIGHTNESS_ADDR, 5);
 }
 
 void loop() {
   currentMillis = millis();
-//
+
 //  if (digitalRead(BTN_1)) {
 //    writeV1(555.5);
 //  } else {
@@ -171,17 +168,18 @@ void loop() {
   }
 
   if (currentMillis - updateSerialMillis > 1000) {
-//    updateSerial();
+    updateSerial();
     updateSerialMillis = currentMillis;
   }
-  if (currentMillis - updateRTDMillis > 1000) {
-    updateRTD();
-    updateRTDMillis = currentMillis;
-  }
-   if (currentMillis - updateDisplayMillis > 1000) {
-    updateDisplay();
-    updateDisplayMillis = currentMillis;
-  }
+//  if (currentMillis - updateRTDMillis > 1000) {
+////    clearALL();
+//    updateRTD(rtd01);
+//    updateRTDMillis = currentMillis;
+//  }
+//   if (currentMillis - updateDisplayMillis > 1000) {
+//    updateDisplay();
+//    updateDisplayMillis = currentMillis;
+//  }
 }
 
 void  updateSerial() {
@@ -197,105 +195,114 @@ void  updateSerial() {
   Serial.println();
   Serial.print("TC Cold Junction: "); Serial.println(tcp01.readCJTemperature());
   Serial.print("TC Temperature: "); Serial.println(tcp01.readThermocoupleTemperature());
+  Serial.print("TC Fault: "); Serial.println(tcp01.readFault());
   Serial.println();
+
+    uint8_t fault = tcp01.readFault();
+    if (fault) {
+    if (fault & MAX31856_FAULT_CJRANGE) Serial.println("Cold Junction Range Fault");
+    if (fault & MAX31856_FAULT_TCRANGE) Serial.println("Thermocouple Range Fault");
+    if (fault & MAX31856_FAULT_CJHIGH)  Serial.println("Cold Junction High Fault");
+    if (fault & MAX31856_FAULT_CJLOW)   Serial.println("Cold Junction Low Fault");
+    if (fault & MAX31856_FAULT_TCHIGH)  Serial.println("Thermocouple High Fault");
+    if (fault & MAX31856_FAULT_TCLOW)   Serial.println("Thermocouple Low Fault");
+    if (fault & MAX31856_FAULT_OVUV)    Serial.println("Over/Under Voltage Fault");
+    if (fault & MAX31856_FAULT_OPEN)    Serial.println("Thermocouple Open Fault");
+  }
 }
 
-void updateRTD() {
-  uint16_t rawRTD = rtd01.readRTD();
+void updateRTD(Adafruit_MAX31865 rtd) {
+  uint16_t rawRTD = rtd.readRTD();
+  float temp = rtd.temperature(RNOMINAL, RREF);
+  temp = 988.7;
   // need half precision float 16bit
 //  float16 ratio = rtd;
 //  ratio /= 32768;
   modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD);
+  Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
+//  writeV1(temp);
 }
 
-void updateDisplay() {
-    writeV1(23.4);
-    Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
-//  writeV1(rtd01.temperature(RNOMINAL, RREF));
-}
-
+//void updateDisplay() {
+//    writeV1(23.4);
 //
-//void updateTemp2() {
-//  uint16_t rtd = thermo2.readRTD();
-//  // need half precision float 16bit
-////  float16 ratio = rtd;
-////  ratio /= 32768;
-//  modbusTCPServer.holdingRegisterWrite(rtd02, rtd);
 //}
 
-void writeV1(float val) {
-  // if > 999.9 show something else
-  // Get 100's place
-  int v100 = (int) val / 100;
-  int v10  = ((int) val % 100) /10;
-  int v1   = ((int) val ) % 10;
-  int v01  = ((int) (val*10) ) %10;
-  Serial.print(v100);
-  Serial.print(v10);
-  Serial.print(v1);
-  Serial.print(".");
-  Serial.println(v01);
+//void writeV1(float val) {
+//  // if > 999.9 show something else
+//  // Get 100's place
+//  int v100 = (int) val / 100;
+//  int v10  = ((int) val % 100) /10;
+//  int v1   = ((int) val ) % 10;
+//  int v01  = ((int) (val*10) ) %10;
+//  Serial.print(v100);
+//  Serial.print(v10);
+//  Serial.print(v1);
+//  Serial.print(".");
+//  Serial.println(v01);
+////  if (v100 == 0){
+////    spiWrite(ledSeg[0], B00000000);
+////  }
+////  else {
+////    spiWrite(ledSeg[0], charTable[v100]);
+////  }
+////  // Write 10s place
+////  spiWrite(ledSeg[1], charTable[v10]);
+////  // Write 1s place
+////  spiWrite(ledSeg[2], B10000000+charTable[v1]);
+////  // Write 0.1s place
+////  spiWrite(ledSeg[3], charTable[v01]);
+////
+////  spiWrite(B00000001, B11111111);
+//
 //  if (v100 == 0){
-//    spiWrite(ledSeg[0], B00000000);
+//    spiWrite(ledSeg[4], B00000000);
 //  }
 //  else {
-//    spiWrite(ledSeg[0], charTable[v100]);
+//    spiWrite(ledSeg[4], charTable[v100]);
 //  }
 //  // Write 10s place
-//  spiWrite(ledSeg[1], charTable[v10]);
+//  spiWrite(ledSeg[5], charTable[v10]);
 //  // Write 1s place
-//  spiWrite(ledSeg[2], B10000000+charTable[v1]);
+//  spiWrite(ledSeg[6], B10000000+charTable[v1]);
 //  // Write 0.1s place
-//  spiWrite(ledSeg[3], charTable[v01]);
-
-  if (v100 == 0){
-    spiWrite(ledSeg[4], B00000000);
-  }
-  else {
-    spiWrite(ledSeg[4], charTable[v100]);
-  }
-  // Write 10s place
-  spiWrite(ledSeg[5], charTable[v10]);
-  // Write 1s place
-  spiWrite(ledSeg[6], B10000000+charTable[v1]);
-  // Write 0.1s place
-  spiWrite(ledSeg[7], charTable[v01]);
-}
-void writeSensor(String sensor) {
-  if (sensor == "rtd") {
-    spiWrite(ledSeg[0], B00000101);
-    spiWrite(ledSeg[1], B00001111);
-    spiWrite(ledSeg[2], B00111101);
-  } else if (sensor == "tcp") {
-    spiWrite(ledSeg[0], B00001111);
-    spiWrite(ledSeg[1], B01001110);
-    spiWrite(ledSeg[2], B01100111);
-  }
-}
-void clearALL() {
-  spiWrite(ledSeg[0], B00000000);
-  spiWrite(ledSeg[1], B00000000);
-  spiWrite(ledSeg[2], B00000000);
-  spiWrite(ledSeg[3], B00000000);
-  spiWrite(ledSeg[4], B00000000);
-  spiWrite(ledSeg[5], B00000000);
-  spiWrite(ledSeg[6], B00000000);
-  spiWrite(ledSeg[7], B00000000);
-}
-// Taken from Examples->SPI->BarometricPressureSensor
-void spiWrite(byte thisRegister, byte thisValue) {
-  // SCP1000 expects the register address in the upper 6 bits
-  // of the byte. So shift the bits left by two bits:
-  //thisRegister = thisRegister << 2;
-  // now combine the register address and the command into one byte:
-  //byte dataToSend = thisRegister | WRITE;
-  // take the chip select low to select the device:
-  digitalWrite(PIN_CS, LOW);
-  SPI.transfer(thisRegister); //Send register location
-  SPI.transfer(thisValue);  //Send value to record into register
-  // take the chip select high to de-select:
-  digitalWrite(PIN_CS, HIGH);
-}
+//  spiWrite(ledSeg[7], charTable[v01]);
+//}
+//void writeSensor(String sensor) {
+//  if (sensor == "rtd") {
+//    spiWrite(ledSeg[0], B00000101);
+//    spiWrite(ledSeg[1], B00001111);
+//    spiWrite(ledSeg[2], B00111101);
+//  } else if (sensor == "tcp") {
+//    spiWrite(ledSeg[0], B00001111);
+//    spiWrite(ledSeg[1], B01001110);
+//    spiWrite(ledSeg[2], B01100111);
+//  }
+//}
+//void clearALL() {
+//  spiWrite(ledSeg[0], B00000000);
+//  spiWrite(ledSeg[1], B00000000);
+//  spiWrite(ledSeg[2], B00000000);
+//  spiWrite(ledSeg[3], B00000000);
+//  spiWrite(ledSeg[4], B00000000);
+//  spiWrite(ledSeg[5], B00000000);
+//  spiWrite(ledSeg[6], B00000000);
+//  spiWrite(ledSeg[7], B00000000);
+//}
+//// Taken from Examples->SPI->BarometricPressureSensor
+//void spiWrite(byte thisRegister, byte thisValue) {
+//  // SCP1000 expects the register address in the upper 6 bits
+//  // of the byte. So shift the bits left by two bits:
+//  //thisRegister = thisRegister << 2;
+//  // now combine the register address and the command into one byte:
+//  //byte dataToSend = thisRegister | WRITE;
+//  // take the chip select low to select the device:
+//  digitalWrite(PIN_CS, LOW);
+//  SPI.transfer(thisRegister); //Send register location
+//  SPI.transfer(thisValue);  //Send value to record into register
+//  // take the chip select high to de-select:
+//  digitalWrite(PIN_CS, HIGH);
+//}
 
 void checkPTFault() {
   // Check and print any faults

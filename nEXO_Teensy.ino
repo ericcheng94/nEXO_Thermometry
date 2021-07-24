@@ -23,14 +23,14 @@
 //#define BTN_1 37 // Display Push button 1
 //#define BTN_2 35 // Display Push button 2
 
-//Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(53);
-// Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(49);
+Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(10);
+// Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(9);
 // Adafruit_MAX31865 rtd03 = Adafruit_MAX31865(47);
 // Adafruit_MAX31865 rtd04 = Adafruit_MAX31865(45);
 // Adafruit_MAX31865 rtd05 = Adafruit_MAX31865(43);
 
 // Thermocouple ADC
-Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(10);
+Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(8);
 //Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(41);
 // Adafruit_MAX31856 tcp02 = Adafruit_MAX31856(39);
 
@@ -53,6 +53,7 @@ unsigned long pollModbusMillis;
 unsigned long updateSerialMillis;
 unsigned long updateRTDMillis;
 unsigned long updateDisplayMillis;
+unsigned long countMillis;
 int           heartbeat;
 
 //Modbus holding register address mapping
@@ -104,21 +105,6 @@ void setup() {
   // configure 7 holding registers at address 0x00
   modbusTCPServer.configureHoldingRegisters(0x00, 8);
 
-  EthernetClient client = ethServer.available();
-
-//  modbusTCPServer.accept(client);
-
-  // listen for incoming clients
-  while (!client) {
-    client = ethServer.available();
-    Serial.println("Waiting for client...");
-    if (client) {
-      Serial.println("new client");
-      modbusTCPServer.accept(client);
-    }
-    delay(1000);
-  }
-
 //  pinMode(PIN_CS, OUTPUT);
 //  pinMode(BTN_1, INPUT);
 //  pinMode(BTN_2, INPUT);
@@ -139,61 +125,79 @@ void setup() {
 }
 
 void loop() {
-  currentMillis = millis();
+  EthernetClient client = ethServer.available();
 
-//  if (digitalRead(BTN_1)) {
-//    writeV1(555.5);
-//  } else {
-//    writeV1(99.9);
-//  }
-//  if (digitalRead(BTN_2)) {
-//    writeSensor("rtd");
-//  } else {
-//    writeSensor("tcp");
-//  }
-
-  if (currentMillis - pollModbusMillis > 1000) {
-    // poll for Modbus TCP requests, while client connected
-    modbusTCPServer.poll();
-    pollModbusMillis = currentMillis;
-
-//    if (heartbeat == 1) {
-//      modbusTCPServer.holdingRegisterWrite(tick_tock, 1);
-//      heartbeat = 0;
-//    } else {
-//      modbusTCPServer.holdingRegisterWrite(tick_tock, 0);
-//      heartbeat = 1;
-//    }
+//  modbusTCPServer.accept(client);
+  // listen for incoming clients
+  if (client) {
+     Serial.println("new client");
+     modbusTCPServer.accept(client);
+  
+     while (client.connected()) {
+        currentMillis = millis();
+        
+        if (currentMillis - pollModbusMillis > 1000) {
+          // poll for Modbus TCP requests, while client connected
+  //        Serial.println("polling Modbus");
+            modbusTCPServer.poll();
+            pollModbusMillis = currentMillis;
+  
+  //      if (heartbeat == 1) {
+  //        modbusTCPServer.holdingRegisterWrite(tick_tock, 1);
+  //        heartbeat = 0;
+  //      } else {
+  //        modbusTCPServer.holdingRegisterWrite(tick_tock, 0);
+  //        heartbeat = 1;
+  //      }
+        }     
+        if (currentMillis - updateSerialMillis > 1000) {
+          Serial.println("updating Serial");
+          updateSerial();
+          updateSerialMillis = currentMillis;
+        }
+        if (currentMillis - updateRTDMillis > 1000) {
+          clearALL();
+          updateRTD(rtd01);
+          updateRTDMillis = currentMillis;
+        }
+        if (currentMillis - updateDisplayMillis > 1000) {
+          updateDisplay();
+          updateDisplayMillis = currentMillis;
+        } 
+        //  if (currentMillis - countMillis > 100) {
+        //    Serial.println("millis");
+        //    countMillis = currentMillis;
+        //  }
+        //  if (digitalRead(BTN_1)) {
+        //    writeV1(555.5);
+        //  } else {
+        //    writeV1(99.9);
+        //  }
+        //  if (digitalRead(BTN_2)) {
+        //    writeSensor("rtd");
+        //  } else {
+        //    writeSensor("tcp");
+        //  }
+     }
   }
-
-  if (currentMillis - updateSerialMillis > 1000) {
-    updateSerial();
-    updateSerialMillis = currentMillis;
-  }
-//  if (currentMillis - updateRTDMillis > 1000) {
-////    clearALL();
-//    updateRTD(rtd01);
-//    updateRTDMillis = currentMillis;
-//  }
-//   if (currentMillis - updateDisplayMillis > 1000) {
-//    updateDisplay();
-//    updateDisplayMillis = currentMillis;
-//  }
+  // backup for if client disconnects, display still runs
+  updateDisplay();
+  delay(1000);
 }
 
 void  updateSerial() {
-//  uint16_t rtd = rtd01.readRTD();
+  uint16_t rtd = rtd01.readRTD();
 ////  uint16_t rtd = thermo2.readRTD();
-//  Serial.print("RTD value: "); Serial.println(rtd);
-//  float ratio = rtd;
-//  ratio /= 32768;
-//  Serial.print("Ratio = "); Serial.println(ratio,8);
-//  Serial.print("Resistance = "); Serial.println(RREF*ratio,8);
-//  Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
+  Serial.print("RTD value: "); Serial.println(rtd);
+  float ratio = rtd;
+  ratio /= 32768;
+  Serial.print("Ratio = "); Serial.println(ratio,8);
+  Serial.print("Resistance = "); Serial.println(RREF*ratio,8);
+  Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
 //  Serial.print("Temperature = "); Serial.println(thermo2.temperature(RNOMINAL, RREF));
   Serial.println();
-  Serial.print("TC Cold Junction: "); Serial.println(tcp01.readCJTemperature());
-  Serial.print("TC Temperature: "); Serial.println(tcp01.readThermocoupleTemperature());
+//  Serial.print("TC Cold Junction: "); Serial.println(tcp01.readCJTemperature());
+//  Serial.print("TC Temperature: "); Serial.println(tcp01.readThermocoupleTemperature());
 //  Serial.print("TC Fault: "); Serial.println(tcp01.readFault());
   Serial.println();
 }
@@ -291,29 +295,29 @@ void  updateSerial() {
 //  digitalWrite(PIN_CS, HIGH);
 //}
 
-//void checkPTFault() {
-//  // Check and print any faults
-//  uint8_t fault = rtd01.readFault();
-//  if (fault) {
-//    Serial.print("Fault 0x"); Serial.println(fault, HEX);
-//    if (fault & MAX31865_FAULT_HIGHTHRESH) {
-//      Serial.println("RTD High Threshold");
-//    }
-//    if (fault & MAX31865_FAULT_LOWTHRESH) {
-//      Serial.println("RTD Low Threshold");
-//    }
-//    if (fault & MAX31865_FAULT_REFINLOW) {
-//      Serial.println("REFIN- > 0.85 x Bias");
-//    }
-//    if (fault & MAX31865_FAULT_REFINHIGH) {
-//      Serial.println("REFIN- < 0.85 x Bias - FORCE- open");
-//    }
-//    if (fault & MAX31865_FAULT_RTDINLOW) {
-//      Serial.println("RTDIN- < 0.85 x Bias - FORCE- open");
-//    }
-//    if (fault & MAX31865_FAULT_OVUV) {
-//      Serial.println("Under/Over voltage");
-//    }
-//    rtd01.clearFault();
-//  }
-//}
+void checkPTFault() {
+  // Check and print any faults
+  uint8_t fault = rtd01.readFault();
+  if (fault) {
+    Serial.print("Fault 0x"); Serial.println(fault, HEX);
+    if (fault & MAX31865_FAULT_HIGHTHRESH) {
+      Serial.println("RTD High Threshold");
+    }
+    if (fault & MAX31865_FAULT_LOWTHRESH) {
+      Serial.println("RTD Low Threshold");
+    }
+    if (fault & MAX31865_FAULT_REFINLOW) {
+      Serial.println("REFIN- > 0.85 x Bias");
+    }
+    if (fault & MAX31865_FAULT_REFINHIGH) {
+      Serial.println("REFIN- < 0.85 x Bias - FORCE- open");
+    }
+    if (fault & MAX31865_FAULT_RTDINLOW) {
+      Serial.println("RTDIN- < 0.85 x Bias - FORCE- open");
+    }
+    if (fault & MAX31865_FAULT_OVUV) {
+      Serial.println("Under/Over voltage");
+    }
+    rtd01.clearFault();
+  }
+}

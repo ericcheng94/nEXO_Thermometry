@@ -24,7 +24,7 @@
 //#define BTN_2 35 // Display Push button 2
 
 Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(10);
-// Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(9);
+ Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(9);
 // Adafruit_MAX31865 rtd03 = Adafruit_MAX31865(47);
 // Adafruit_MAX31865 rtd04 = Adafruit_MAX31865(45);
 // Adafruit_MAX31865 rtd05 = Adafruit_MAX31865(43);
@@ -74,7 +74,8 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
   Serial.println("nEXO ModbusTCP RTDTest!");
-//  rtd01.begin(MAX31865_3WIRE);  // set to 2WIRE or 4WIRE as necessary
+  rtd01.begin(MAX31865_3WIRE);  // set to 2WIRE or 4WIRE as necessary
+  rtd02.begin(MAX31865_3WIRE);  // set to 2WIRE or 4WIRE as necessary
   tcp01.begin();
 //  Serial.print("TC Type: "); Serial.println(tcp01.getThermocoupleType());
   tcp01.setThermocoupleType(MAX31856_TCTYPE_T);
@@ -151,18 +152,18 @@ void loop() {
   //      }
         }     
         if (currentMillis - updateSerialMillis > 1000) {
-          Serial.println("updating Serial");
+//          Serial.println("updating Serial");
           updateSerial();
           updateSerialMillis = currentMillis;
         }
-        if (currentMillis - updateRTDMillis > 1000) {
-          clearALL();
-          updateRTD(rtd01);
-          updateRTDMillis = currentMillis;
-        }
-        if (currentMillis - updateDisplayMillis > 1000) {
-          updateDisplay();
-          updateDisplayMillis = currentMillis;
+//        if (currentMillis - updateRTDMillis > 1000) {
+//          clearALL();
+//          updateRTD(rtd01);
+//          updateRTDMillis = currentMillis;
+//        }
+//        if (currentMillis - updateDisplayMillis > 1000) {
+//          updateDisplay();
+//          updateDisplayMillis = currentMillis;
         } 
         //  if (currentMillis - countMillis > 100) {
         //    Serial.println("millis");
@@ -179,25 +180,24 @@ void loop() {
         //    writeSensor("tcp");
         //  }
      }
-  }
   // backup for if client disconnects, display still runs
-  updateDisplay();
+//  updateDisplay();
   delay(1000);
 }
 
+
 void  updateSerial() {
   uint16_t rtd = rtd01.readRTD();
-////  uint16_t rtd = thermo2.readRTD();
   Serial.print("RTD value: "); Serial.println(rtd);
   float ratio = rtd;
   ratio /= 32768;
   Serial.print("Ratio = "); Serial.println(ratio,8);
   Serial.print("Resistance = "); Serial.println(RREF*ratio,8);
   Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
-//  Serial.print("Temperature = "); Serial.println(thermo2.temperature(RNOMINAL, RREF));
+  Serial.print("Temperature = "); Serial.println(rtd02.temperature(RNOMINAL, RREF));
   Serial.println();
-//  Serial.print("TC Cold Junction: "); Serial.println(tcp01.readCJTemperature());
-//  Serial.print("TC Temperature: "); Serial.println(tcp01.readThermocoupleTemperature());
+  Serial.print("TC Cold Junction: "); Serial.println(tcp01.readCJTemperature());
+  Serial.print("TC Temperature: "); Serial.println(tcp01.readThermocoupleTemperature());
 //  Serial.print("TC Fault: "); Serial.println(tcp01.readFault());
   Serial.println();
 }

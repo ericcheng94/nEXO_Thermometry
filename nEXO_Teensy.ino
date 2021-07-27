@@ -48,18 +48,19 @@ IPAddress ip(192, 168, 0, 242);
 EthernetServer ethServer(502);
 ModbusTCPServer modbusTCPServer;
 
-unsigned long currentMillis;
-unsigned long pollModbusMillis;
-unsigned long updateSensorsMillis;
-unsigned long updateClientMillis;
-unsigned long updateSerialMillis;
-unsigned long updateDisplayMillis;
-//unsigned long display1Millis;
-//unsigned long display2Millis;
-int           heartbeat;
+uint32_t currentMillis;
+uint32_t pollModbusMillis;
+uint32_t updateSensorsMillis;
+uint32_t updateClientMillis;
+uint32_t updateSerialMillis;
+uint32_t updateDisplayMillis;
+//uint32_t display1Millis;
+//uint32_t display2Millis;
+unsigned int  heartbeat;
 int           sensorCounter1 = 0; // okay to initialize like this?
 int           sensorCounter2 = 0;
 
+// Global variables to make current sensor temps available to every function
 float rtd01temp;
 float rtd02temp;
 float rtd03temp;
@@ -153,16 +154,18 @@ void loop() {
          modbusTCPServer.poll();
          pollModbusMillis = currentMillis;
   
-  //      if (heartbeat == 1) {
-  //        modbusTCPServer.holdingRegisterWrite(tick_tock, 1);
-  //        heartbeat = 0;
-  //      } else {
-  //        modbusTCPServer.holdingRegisterWrite(tick_tock, 0);
-  //        heartbeat = 1;
-  //      }
+//         if (heartbeat > 65000) {
+//           heartbeat = 1;
+//         } else if (heartbeat % 2 == 1) {
+//           modbusTCPServer.holdingRegisterWrite(tick_tock, 1);
+//           heartbeat = 0;
+//         } else {
+//           modbusTCPServer.holdingRegisterWrite(tick_tock, 0);
+//           heartbeat = 1;
+//         }
        }     
 
-       if (currentMillis - updateSensorsMillis > 1000) {
+       if (currentMillis - updateSensorsMillis > 100) {
          rtd01temp = rtd01.temperature(RNOMINAL, RREF);
          rtd02temp = rtd02.temperature(RNOMINAL, RREF);
 //         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
@@ -174,14 +177,16 @@ void loop() {
        }
        
        if (currentMillis - updateClientMillis > 1000) {
-         updateClient(rtd01temp, rtd02temp, tcp01temp);
+         updateClient(tcp01temp);
+//         updateClient(tcp01temp, tcp02temp);
          updateClientMillis = currentMillis;
        }      
         
-       if (currentMillis - updateSerialMillis > 1000) {
-         updateSerial();
-         updateSerialMillis = currentMillis;
-       }
+//       if (currentMillis - updateSerialMillis > 1000) {
+//         updateSerial();
+//         updateSerialMillis = currentMillis;
+//       }
+
 //        if (currentMillis - updateDisplayMillis > 1000) {
 //          updateDisplay();
 //          updateDisplayMillis = currentMillis;
@@ -199,24 +204,26 @@ void loop() {
   }
   // backup for if client disconnects, display still runs
   rtd01temp = rtd01.temperature(RNOMINAL, RREF);
-  rtd02temp = rtd02.temperature(RNOMINAL, RREF);
+//  rtd02temp = rtd02.temperature(RNOMINAL, RREF);
 //         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
 //         rtd04temp = rtd04.temperature(RNOMINAL, RREF);
 //         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
-  tcp01temp = tcp01.readThermocoupleTemperature();         
+//  tcp01temp = tcp01.readThermocoupleTemperature();         
 //         tcp02temp = tcp02.readThermocoupleTemperature();   
-  updateDisplay(rtd01temp, rtd02temp, tcp01temp);
+  updateDisplay(rtd01temp);
+//  updateDisplay(rtd01temp, rtd02temp, tcp01temp);
+//  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp);
 }
 
-void updateClient(Adafruit_MAX31865 rtd) {
-  uint16_t rawRTD = rtd.readRTD();
-  float temp = rtd.temperature(RNOMINAL, RREF);
-  temp = 988.7;
-  // need half precision float 16bit
-//  float16 ratio = rtd;
-//  ratio /= 32768;
-  modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD);
-  Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
+void updateClient(float tcp01temp) {
+  uint16_t rawRTD01 = rtd01.readRTD();
+  uint16_t rawRTD02 = rtd02.readRTD();
+  Serial.print("rtd01 raw = "); Serial.println(rawRTD01);
+  Serial.print("rtd02 raw = "); Serial.println(rawRTD02);
+  Serial.print("tcp temperature = "); Serial.println(tcp01temp);
+  modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD01);
+  modbusTCPServer.holdingRegisterWrite(rtd02_reg, rawRTD02);
+  modbusTCPServer.holdingRegisterWrite(tcp01_reg, tcp01temp * 10);
 }
 
 void  updateSerial() {
@@ -234,7 +241,8 @@ void  updateSerial() {
   Serial.println();
 }
 
-void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
+//void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
+void updateDisplay(float rtd01temp) {
 //  clearALL();
 //    writeV1(23.4);
   if (digitalRead(BTN_1)) {
@@ -244,10 +252,10 @@ void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
     selectSensor(sensorArray[sensorCounter1], 0);
     delay(1000); // TODO Remove delay 
   }
-//  Serial.print("display temp: "); Serial.println(rtd01temp);
-////  writeV1(rtd01temp);
+  Serial.print("display temp: "); Serial.println(rtd01temp);
+  writeV1(rtd01temp);
 //  writeV1(22.9);
-//  delay(500);
+  delay(500);
 //  if (digitalRead(BTN_2)) {
 //    selectSensor("rtd", 1);
 //  } else {

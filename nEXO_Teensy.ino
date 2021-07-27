@@ -13,6 +13,7 @@ const byte charTable[10] = {
 const byte ledSeg[8] = {
     B00001000, B00000111, B00000110, B00000101, B00000100, B00000011, B00000010, B00000001 
 };
+const String sensorArray[7] = {"rtd1", "rtd2", "rtd3", "rtd4", "rtd5", "tcp1", "tcp2"};
 #define DECODEMODE_ADDR (0x09)
 #define BRIGHTNESS_ADDR (0x0A)
 #define SCANLIMIT_ADDR (0x0B)
@@ -54,7 +55,8 @@ unsigned long updateRTDMillis;
 unsigned long updateDisplayMillis;
 unsigned long countMillis;
 int           heartbeat;
-
+int           sensorCounter1 = 0; // okay to initialize like this?
+int           sensorCounter2 = 0;
 //Modbus holding register address mapping
 const int rtd01_reg = 0x00;
 const int rtd02_reg = 0x01;
@@ -174,7 +176,6 @@ void loop() {
   }
   // backup for if client disconnects, display still runs
   updateDisplay();
-  delay(250);
 }
 
 
@@ -209,15 +210,17 @@ void updateDisplay() {
 //  clearALL();
 //    writeV1(23.4);
   if (digitalRead(BTN_1)) {
-    selectSensor("rtd", 0);
-  } else {
-    selectSensor("tcp", 0);
+    sensorCounter1++;
+    if (sensorCounter1 > 6)
+      sensorCounter1 = 0;
+    selectSensor(sensorArray[sensorCounter1], 0);
+    delay(1000); // TODO Remove delay 
   }
-  if (digitalRead(BTN_2)) {
-    selectSensor("rtd", 1);
-  } else {
-    selectSensor("tcp", 1);
-  }
+//  if (digitalRead(BTN_2)) {
+//    selectSensor("rtd", 1);
+//  } else {
+//    selectSensor("tcp", 1);
+//  }
 }
 
 void writeV1(float val) {
@@ -262,24 +265,41 @@ void writeV1(float val) {
 }
 void selectSensor(String sensor, int side) {
   if (side == 0) {
-    if (sensor == "rtd") {
+    if (sensor == "rtd1") {
       spiWrite(ledSeg[0], B00000101);
       spiWrite(ledSeg[1], B00001111);
       spiWrite(ledSeg[2], B00111101);
-    } else {
+      spiWrite(ledSeg[3], charTable[1]);
+    } else if (sensor == "rtd2") {
+      spiWrite(ledSeg[0], B00000101);
+      spiWrite(ledSeg[1], B00001111);
+      spiWrite(ledSeg[2], B00111101);
+      spiWrite(ledSeg[3], charTable[2]);      
+    } else if (sensor == "rtd3") {
+      spiWrite(ledSeg[0], B00000101);
+      spiWrite(ledSeg[1], B00001111);
+      spiWrite(ledSeg[2], B00111101);
+      spiWrite(ledSeg[3], charTable[3]);  
+    } else if (sensor == "rtd4") {
+      spiWrite(ledSeg[0], B00000101);
+      spiWrite(ledSeg[1], B00001111);
+      spiWrite(ledSeg[2], B00111101);
+      spiWrite(ledSeg[3], charTable[4]);  
+    } else if (sensor == "rtd5") {
+      spiWrite(ledSeg[0], B00000101);
+      spiWrite(ledSeg[1], B00001111);
+      spiWrite(ledSeg[2], B00111101);
+      spiWrite(ledSeg[3], charTable[5]); 
+    } else if (sensor == "tcp1") {
       spiWrite(ledSeg[0], B00001111);
       spiWrite(ledSeg[1], B01001110);
       spiWrite(ledSeg[2], B01100111);
-    }
-  } else {
-    if (sensor == "tcp") {
-      spiWrite(ledSeg[4], B00001111);
-      spiWrite(ledSeg[5], B01001110);
-      spiWrite(ledSeg[6], B01100111);
-    } else {
-      spiWrite(ledSeg[4], B00000101);
-      spiWrite(ledSeg[5], B00001111);
-      spiWrite(ledSeg[6], B00111101);
+      spiWrite(ledSeg[3], charTable[1]); 
+    } else if (sensor == "tcp2") {
+      spiWrite(ledSeg[0], B00001111);
+      spiWrite(ledSeg[1], B01001110);
+      spiWrite(ledSeg[2], B01100111);
+      spiWrite(ledSeg[3], charTable[2]);                             
     }
   }
 }

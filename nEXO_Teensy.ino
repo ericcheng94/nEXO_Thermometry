@@ -50,13 +50,24 @@ ModbusTCPServer modbusTCPServer;
 
 unsigned long currentMillis;
 unsigned long pollModbusMillis;
+unsigned long updateSensorsMillis;
+unsigned long updateClientMillis;
 unsigned long updateSerialMillis;
-unsigned long updateRTDMillis;
 unsigned long updateDisplayMillis;
-unsigned long countMillis;
+//unsigned long display1Millis;
+//unsigned long display2Millis;
 int           heartbeat;
 int           sensorCounter1 = 0; // okay to initialize like this?
 int           sensorCounter2 = 0;
+
+float rtd01temp;
+float rtd02temp;
+float rtd03temp;
+float rtd04temp;
+float rtd05temp;
+float tcp01temp;
+float tcp02temp;
+
 //Modbus holding register address mapping
 const int rtd01_reg = 0x00;
 const int rtd02_reg = 0x01;
@@ -112,7 +123,7 @@ void setup() {
   pinMode(BTN_2, INPUT);
   digitalWrite(PIN_CS, HIGH);
   SPI.begin(); 
-  //SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));  
+//  SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));  
   spiWrite(DISPLAYTEST_ADDR, OP_OFF);
   //we go into shutdown-mode on startup
   spiWrite(SHUTDOWN_ADDR, OP_OFF);
@@ -135,12 +146,12 @@ void loop() {
      modbusTCPServer.accept(client);
   
      while (client.connected()) {
-        currentMillis = millis();
+       currentMillis = millis();
         
-        if (currentMillis - pollModbusMillis > 1000) {
-          // poll for Modbus TCP requests, while client connected
-            modbusTCPServer.poll();
-            pollModbusMillis = currentMillis;
+       if (currentMillis - pollModbusMillis > 1000) {
+         // poll for Modbus TCP requests, while client connected
+         modbusTCPServer.poll();
+         pollModbusMillis = currentMillis;
   
   //      if (heartbeat == 1) {
   //        modbusTCPServer.holdingRegisterWrite(tick_tock, 1);
@@ -149,24 +160,36 @@ void loop() {
   //        modbusTCPServer.holdingRegisterWrite(tick_tock, 0);
   //        heartbeat = 1;
   //      }
-        }     
+       }     
+
+       if (currentMillis - updateSensorsMillis > 1000) {
+         rtd01temp = rtd01.temperature(RNOMINAL, RREF);
+         rtd02temp = rtd02.temperature(RNOMINAL, RREF);
+//         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
+//         rtd04temp = rtd04.temperature(RNOMINAL, RREF);
+//         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
+         tcp01temp = tcp01.readThermocoupleTemperature();         
+//         tcp02temp = tcp02.readThermocoupleTemperature();         
+         updateSensorsMillis = currentMillis;
+       }
+       
+       if (currentMillis - updateClientMillis > 1000) {
+         updateClient(rtd01temp, rtd02temp, tcp01temp);
+         updateClientMillis = currentMillis;
+       }      
+        
        if (currentMillis - updateSerialMillis > 1000) {
          updateSerial();
          updateSerialMillis = currentMillis;
        }
-//        if (currentMillis - updateRTDMillis > 1000) {
-//          clearALL();
-//          updateRTD(rtd01);
-//          updateRTDMillis = currentMillis;
-//        }
 //        if (currentMillis - updateDisplayMillis > 1000) {
 //          updateDisplay();
 //          updateDisplayMillis = currentMillis;
-       if (digitalRead(BTN_1)) {
-          writeV1(555.5);
-       } else {
-          writeV1(99.9);
-       }
+//       if (digitalRead(BTN_1)) {
+//          writeV1(555.5);
+//       } else {
+//          writeV1(99.9);
+//       }
 //       if (digitalRead(BTN_2)) {
 //          selectSensor("rtd");
 //       } else {
@@ -175,9 +198,26 @@ void loop() {
      } 
   }
   // backup for if client disconnects, display still runs
-  updateDisplay();
+  rtd01temp = rtd01.temperature(RNOMINAL, RREF);
+  rtd02temp = rtd02.temperature(RNOMINAL, RREF);
+//         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
+//         rtd04temp = rtd04.temperature(RNOMINAL, RREF);
+//         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
+  tcp01temp = tcp01.readThermocoupleTemperature();         
+//         tcp02temp = tcp02.readThermocoupleTemperature();   
+  updateDisplay(rtd01temp, rtd02temp, tcp01temp);
 }
 
+void updateClient(Adafruit_MAX31865 rtd) {
+  uint16_t rawRTD = rtd.readRTD();
+  float temp = rtd.temperature(RNOMINAL, RREF);
+  temp = 988.7;
+  // need half precision float 16bit
+//  float16 ratio = rtd;
+//  ratio /= 32768;
+  modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD);
+  Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
+}
 
 void  updateSerial() {
   uint16_t rtd = rtd01.readRTD();
@@ -194,19 +234,7 @@ void  updateSerial() {
   Serial.println();
 }
 
-//void updateRTD(Adafruit_MAX31865 rtd) {
-//  uint16_t rawRTD = rtd.readRTD();
-//  float temp = rtd.temperature(RNOMINAL, RREF);
-//  temp = 988.7;
-//  // need half precision float 16bit
-////  float16 ratio = rtd;
-////  ratio /= 32768;
-//  modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD);
-//  Serial.print("Temperature = "); Serial.println(rtd01.temperature(RNOMINAL, RREF));
-////  writeV1(temp);
-//}
-
-void updateDisplay() {
+void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
 //  clearALL();
 //    writeV1(23.4);
   if (digitalRead(BTN_1)) {
@@ -216,6 +244,10 @@ void updateDisplay() {
     selectSensor(sensorArray[sensorCounter1], 0);
     delay(1000); // TODO Remove delay 
   }
+//  Serial.print("display temp: "); Serial.println(rtd01temp);
+////  writeV1(rtd01temp);
+//  writeV1(22.9);
+//  delay(500);
 //  if (digitalRead(BTN_2)) {
 //    selectSensor("rtd", 1);
 //  } else {
@@ -230,26 +262,37 @@ void writeV1(float val) {
   int v10  = ((int) val % 100) /10;
   int v1   = ((int) val ) % 10;
   int v01  = ((int) (val*10) ) %10;
+  Serial.print(v100);
+  Serial.print(v10);
+  Serial.print(v1);
+  Serial.print(".");
+  Serial.println(v01);
+  if (v100 == 0){
+    spiWrite(ledSeg[0], B00000000);
+  }
+  else {
+    spiWrite(ledSeg[0], charTable[v100]);
+  }
+  // Write 10s place
+  spiWrite(ledSeg[1], charTable[v10]);
+  // Write 1s place
+  spiWrite(ledSeg[2], B10000000+charTable[v1]);
+  // Write 0.1s place
+  spiWrite(ledSeg[3], charTable[v01]);
+}
+
+void writeV2(float val) {
+  // if > 999.9 show something else
+  // Get 100's place
+  int v100 = (int) val / 100;
+  int v10  = ((int) val % 100) /10;
+  int v1   = ((int) val ) % 10;
+  int v01  = ((int) (val*10) ) %10;
 //  Serial.print(v100);
 //  Serial.print(v10);
 //  Serial.print(v1);
 //  Serial.print(".");
 //  Serial.println(v01);
-//  if (v100 == 0){
-//    spiWrite(ledSeg[0], B00000000);
-//  }
-//  else {
-//    spiWrite(ledSeg[0], charTable[v100]);
-//  }
-//  // Write 10s place
-//  spiWrite(ledSeg[1], charTable[v10]);
-//  // Write 1s place
-//  spiWrite(ledSeg[2], B10000000+charTable[v1]);
-//  // Write 0.1s place
-//  spiWrite(ledSeg[3], charTable[v01]);
-//
-//  spiWrite(B00000001, B11111111);
-
   if (v100 == 0){
     spiWrite(ledSeg[4], B00000000);
   }
@@ -263,6 +306,8 @@ void writeV1(float val) {
   // Write 0.1s place
   spiWrite(ledSeg[7], charTable[v01]);
 }
+
+// TODO create chartable for sensor name as well to save space
 void selectSensor(String sensor, int side) {
   if (side == 0) {
     if (sensor == "rtd1") {
@@ -303,6 +348,7 @@ void selectSensor(String sensor, int side) {
     }
   }
 }
+
 void clearALL() {
   spiWrite(ledSeg[0], B00000000);
   spiWrite(ledSeg[1], B00000000);
@@ -313,6 +359,7 @@ void clearALL() {
   spiWrite(ledSeg[6], B00000000);
   spiWrite(ledSeg[7], B00000000);
 }
+
 // Taken from Examples->SPI->BarometricPressureSensor
 void spiWrite(byte thisRegister, byte thisValue) {
   // SCP1000 expects the register address in the upper 6 bits

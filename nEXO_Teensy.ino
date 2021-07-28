@@ -75,9 +75,11 @@ const int rtd02_reg = 0x01;
 const int rtd03_reg = 0x02;
 const int rtd04_reg = 0x03;
 const int rtd05_reg = 0x04;
-const int tcp01_reg = 0x05;
-const int tcp02_reg = 0x06;
-const int tick_tock = 0x07;
+const int tcp01_reg1 = 0x05;
+const int tcp01_reg2 = 0x06;
+const int tcp02_reg1 = 0x07;
+const int tcp02_reg2 = 0x08;
+const int tick_tock = 0x09;
 
 // const int ledPin = LED_BUILTIN;
 
@@ -117,7 +119,7 @@ void setup() {
   }
 
   // configure 7 holding registers at address 0x00
-  modbusTCPServer.configureHoldingRegisters(0x00, 8);
+  modbusTCPServer.configureHoldingRegisters(0x00, 10);
 
   pinMode(PIN_CS, OUTPUT);
   pinMode(BTN_1, INPUT);
@@ -203,7 +205,7 @@ void loop() {
      } 
   }
   // backup for if client disconnects, display still runs
-  rtd01temp = rtd01.temperature(RNOMINAL, RREF);
+//  rtd01temp = rtd01.temperature(RNOMINAL, RREF);
 //  rtd02temp = rtd02.temperature(RNOMINAL, RREF);
 //         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
 //         rtd04temp = rtd04.temperature(RNOMINAL, RREF);
@@ -223,7 +225,39 @@ void updateClient(float tcp01temp) {
   Serial.print("tcp temperature = "); Serial.println(tcp01temp);
   modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD01);
   modbusTCPServer.holdingRegisterWrite(rtd02_reg, rawRTD02);
-  modbusTCPServer.holdingRegisterWrite(tcp01_reg, tcp01temp * 10);
+
+//  float f = tcp01temp;
+//  uint16_t a[2];
+//  f_2uint_int1(f);
+//  f_2uint_int2(f);
+  modbusTCPServer.holdingRegisterWrite(tcp01_reg1, f_2uint_int1(tcp01temp));
+  modbusTCPServer.holdingRegisterWrite(tcp01_reg2, f_2uint_int2(tcp01temp));
+}
+
+unsigned int f_2uint_int1(float float_number) {             // split the float and return first unsigned integer
+
+  union f_2uint {
+    float f;
+    uint16_t i[2];
+  };
+
+  union f_2uint f_number;
+  f_number.f = float_number;
+
+  return f_number.i[0];
+}
+
+unsigned int f_2uint_int2(float float_number) {            // split the float and return first unsigned integer
+
+  union f_2uint {
+    float f;
+    uint16_t i[2];
+  };
+
+  union f_2uint f_number;
+  f_number.f = float_number;
+
+  return f_number.i[1];
 }
 
 void  updateSerial() {
@@ -252,9 +286,9 @@ void updateDisplay(float rtd01temp) {
     selectSensor(sensorArray[sensorCounter1], 0);
     delay(1000); // TODO Remove delay 
   }
-  Serial.print("display temp: "); Serial.println(rtd01temp);
-  writeV1(rtd01temp);
-//  writeV1(22.9);
+//  Serial.print("display temp: "); Serial.println(rtd01temp);
+//  writeV1(rtd01temp);
+  writeV1(22.9);
   delay(500);
 //  if (digitalRead(BTN_2)) {
 //    selectSensor("rtd", 1);

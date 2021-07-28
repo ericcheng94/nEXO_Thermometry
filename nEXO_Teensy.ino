@@ -184,10 +184,10 @@ void loop() {
          updateClientMillis = currentMillis;
        }      
         
-//       if (currentMillis - updateSerialMillis > 1000) {
-//         updateSerial();
-//         updateSerialMillis = currentMillis;
-//       }
+       if (currentMillis - updateSerialMillis > 1000) {
+         updateSerial();
+         updateSerialMillis = currentMillis;
+       }
 
 //        if (currentMillis - updateDisplayMillis > 1000) {
 //          updateDisplay();
@@ -212,10 +212,15 @@ void loop() {
 //         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
 //  tcp01temp = tcp01.readThermocoupleTemperature();         
 //         tcp02temp = tcp02.readThermocoupleTemperature();   
-  updateDisplay(rtd01temp);
+//  updateDisplay(rtd01temp);
 //  updateDisplay(rtd01temp, rtd02temp, tcp01temp);
 //  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp);
 }
+
+union {
+    float asFloat;
+    uint16_t asInt[2];
+} flreg;
 
 void updateClient(float tcp01temp) {
   uint16_t rawRTD01 = rtd01.readRTD();
@@ -226,38 +231,10 @@ void updateClient(float tcp01temp) {
   modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD01);
   modbusTCPServer.holdingRegisterWrite(rtd02_reg, rawRTD02);
 
-//  float f = tcp01temp;
 //  uint16_t a[2];
-//  f_2uint_int1(f);
-//  f_2uint_int2(f);
-  modbusTCPServer.holdingRegisterWrite(tcp01_reg1, f_2uint_int1(tcp01temp));
-  modbusTCPServer.holdingRegisterWrite(tcp01_reg2, f_2uint_int2(tcp01temp));
-}
-
-unsigned int f_2uint_int1(float float_number) {             // split the float and return first unsigned integer
-
-  union f_2uint {
-    float f;
-    uint16_t i[2];
-  };
-
-  union f_2uint f_number;
-  f_number.f = float_number;
-
-  return f_number.i[0];
-}
-
-unsigned int f_2uint_int2(float float_number) {            // split the float and return first unsigned integer
-
-  union f_2uint {
-    float f;
-    uint16_t i[2];
-  };
-
-  union f_2uint f_number;
-  f_number.f = float_number;
-
-  return f_number.i[1];
+  flreg.asFloat = tcp01temp;
+  modbusTCPServer.holdingRegisterWrite(tcp01_reg1, flreg.asInt[1]);
+  modbusTCPServer.holdingRegisterWrite(tcp01_reg2, flreg.asInt[0]);
 }
 
 void  updateSerial() {
@@ -289,7 +266,7 @@ void updateDisplay(float rtd01temp) {
 //  Serial.print("display temp: "); Serial.println(rtd01temp);
 //  writeV1(rtd01temp);
   writeV1(22.9);
-  delay(500);
+//  delay(500);
 //  if (digitalRead(BTN_2)) {
 //    selectSensor("rtd", 1);
 //  } else {

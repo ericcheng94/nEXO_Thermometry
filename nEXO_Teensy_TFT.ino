@@ -9,14 +9,14 @@
 #include <ArduinoModbus.h>
 
 Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(10);
-Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(36);
-// Adafruit_MAX31865 rtd03 = Adafruit_MAX31865(47);
-// Adafruit_MAX31865 rtd04 = Adafruit_MAX31865(45);
-// Adafruit_MAX31865 rtd05 = Adafruit_MAX31865(43);
+Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(5);
+// Adafruit_MAX31865 rtd03 = Adafruit_MAX31865(6);
+// Adafruit_MAX31865 rtd04 = Adafruit_MAX31865(7);
+// Adafruit_MAX31865 rtd05 = Adafruit_MAX31865(8);
 
 // Thermocouple ADC
-Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(35);
-// Adafruit_MAX31856 tcp02 = Adafruit_MAX31856(39);
+Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(36);
+// Adafruit_MAX31856 tcp02 = Adafruit_MAX31856(37);
 
 // The value of the Rref resistor. Use 430.0 for PT100 and 4300.0 for PT1000
 #define RREF      430.0
@@ -25,7 +25,7 @@ Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(35);
 #define RNOMINAL  100.0
 
 #define TFT_DC  9
-#define TFT_CS 37
+#define TFT_CS 35
 ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
 
 // Enter a MAC address for your controller below.
@@ -69,9 +69,9 @@ const int tick_tock = 0x09;
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
+//  while (!Serial) {
+//    ; // wait for serial port to connect. Needed for native USB port only
+//  }
   Serial.println("nEXO ModbusTCP RTDTest!");
   rtd01.begin(MAX31865_3WIRE);  // set to 2WIRE or 4WIRE as necessary
   rtd02.begin(MAX31865_3WIRE);  // set to 2WIRE or 4WIRE as necessary
@@ -127,15 +127,15 @@ void loop() {
   if (client) {
      Serial.println("new client");
      modbusTCPServer.accept(client);
-  
+
      while (client.connected()) {
        currentMillis = millis();
-        
+
        if (currentMillis - pollModbusMillis > 1000) {
          // poll for Modbus TCP requests, while client connected
          modbusTCPServer.poll();
          pollModbusMillis = currentMillis;
-  
+
 //         if (heartbeat > 65000) {
 //           heartbeat = 1;
 //         } else if (heartbeat % 2 == 1) {
@@ -145,7 +145,7 @@ void loop() {
 //           modbusTCPServer.holdingRegisterWrite(tick_tock, 0);
 //           heartbeat = 1;
 //         }
-       }     
+       }
 
        if (currentMillis - updateSensorsMillis > 100) {
          rtd01temp = rtd01.temperature(RNOMINAL, RREF);
@@ -153,17 +153,17 @@ void loop() {
 //         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
 //         rtd04temp = rtd04.temperature(RNOMINAL, RREF);
 //         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
-         tcp01temp = tcp01.readThermocoupleTemperature();         
-//         tcp02temp = tcp02.readThermocoupleTemperature();         
+         tcp01temp = tcp01.readThermocoupleTemperature();
+//         tcp02temp = tcp02.readThermocoupleTemperature();
          updateSensorsMillis = currentMillis;
        }
-       
+
        if (currentMillis - updateClientMillis > 1000) {
          updateClient(tcp01temp);
 //         updateClient(tcp01temp, tcp02temp);
          updateClientMillis = currentMillis;
-       }      
-        
+       }
+
        if (currentMillis - updateSerialMillis > 2000) {
          updateSerial();
          updateSerialMillis = currentMillis;
@@ -182,8 +182,8 @@ void loop() {
 //         rtd03temp = rtd03.temperature(RNOMINAL, RREF);
 //         rtd04temp = rtd04.temperature(RNOMINAL, RREF);
 //         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
-  tcp01temp = tcp01.readThermocoupleTemperature();         
-//         tcp02temp = tcp02.readThermocoupleTemperature();   
+  tcp01temp = tcp01.readThermocoupleTemperature();
+//         tcp02temp = tcp02.readThermocoupleTemperature();
   updateDisplay(rtd01temp, rtd02temp, tcp01temp);
 //  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp);
   delay(250); // TODO Change to millis
@@ -229,38 +229,23 @@ void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
   tcp01temp += 273.15;
 
 
-  if (rtd01temp < 300)
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-  else
-    tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
-  tft.setCursor(10, 10);  
+  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+  tft.setCursor(10, 10);
   tft.print("RTD_01:"); tft.print(rtd01temp); tft.println(" K");
-
-  if (rtd02temp < 300)
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-  else
-    tft.setTextColor(ILI9341_RED, ILI9341_BLACK);  
   tft.setCursor(10, 40);
   tft.print("RTD_02:"); tft.print(rtd02temp); tft.println(" K");
-
-  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   tft.setCursor(10, 70);
-  tft.print("RTD_01:"); tft.print("--"); tft.println(" K");
+  tft.print("RTD_03:"); tft.print("--"); tft.println(" K");
   tft.setCursor(10, 100);
-  tft.print("RTD_01:"); tft.print("--"); tft.println(" K");
+  tft.print("RTD_04:"); tft.print("--"); tft.println(" K");
   tft.setCursor(10, 130);
-  tft.print("RTD_01:"); tft.print("--"); tft.println(" K");
-  
-  if (tcp01temp < 300)
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-  else
-    tft.setTextColor(ILI9341_RED, ILI9341_BLACK);  
+  tft.print("RTD_05:"); tft.print("--"); tft.println(" K");
+
+  tft.setTextColor(ILI9341_YELLOW, ILI9341_BLACK);
   tft.setCursor(10, 170);
   tft.print("TCP_01:"); tft.print(tcp01temp); tft.println(" K");
-
-  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   tft.setCursor(10, 200);
-  tft.print("TCP_01:"); tft.print("--"); tft.println(" K");
+  tft.print("TCP_02:"); tft.print("--"); tft.println(" K");
 }
 
 void checkPTFault() {

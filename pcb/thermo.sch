@@ -102,8 +102,6 @@ F 3 "~" H 8350 2450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Entry Wire Line
-	3550 2300 3650 2400
-Entry Wire Line
 	3550 2200 3650 2300
 Entry Wire Line
 	3550 2100 3650 2200
@@ -111,10 +109,6 @@ Entry Wire Line
 	3550 2000 3650 2100
 Entry Wire Line
 	3550 1900 3650 2000
-Entry Wire Line
-	3550 1800 3650 1900
-Entry Wire Line
-	3550 6700 3650 6800
 Entry Wire Line
 	3550 6600 3650 6700
 Entry Wire Line
@@ -124,10 +118,6 @@ Entry Wire Line
 Entry Wire Line
 	3550 6300 3650 6400
 Entry Wire Line
-	3550 6200 3650 6300
-Entry Wire Line
-	3550 5600 3650 5700
-Entry Wire Line
 	3550 5500 3650 5600
 Entry Wire Line
 	3550 5400 3650 5500
@@ -135,10 +125,6 @@ Entry Wire Line
 	3550 5300 3650 5400
 Entry Wire Line
 	3550 5200 3650 5300
-Entry Wire Line
-	3550 5100 3650 5200
-Entry Wire Line
-	3550 4500 3650 4600
 Entry Wire Line
 	3550 4400 3650 4500
 Entry Wire Line
@@ -148,10 +134,6 @@ Entry Wire Line
 Entry Wire Line
 	3550 4100 3650 4200
 Entry Wire Line
-	3550 4000 3650 4100
-Entry Wire Line
-	3550 2900 3650 3000
-Entry Wire Line
 	3550 3000 3650 3100
 Entry Wire Line
 	3550 3100 3650 3200
@@ -159,8 +141,6 @@ Entry Wire Line
 	3550 3200 3650 3300
 Entry Wire Line
 	3550 3300 3650 3400
-Entry Wire Line
-	3550 3400 3650 3500
 Wire Wire Line
 	3000 2900 3550 2900
 Wire Wire Line
@@ -210,8 +190,6 @@ Wire Wire Line
 Wire Wire Line
 	3000 6700 3550 6700
 Entry Wire Line
-	4450 6050 4550 6150
-Entry Wire Line
 	4650 6050 4750 6150
 Entry Wire Line
 	4750 6050 4850 6150
@@ -220,12 +198,6 @@ Entry Wire Line
 Entry Wire Line
 	4950 6050 5050 6150
 Entry Wire Line
-	5050 6050 5150 6150
-Entry Wire Line
-	5150 6050 5250 6150
-Entry Wire Line
-	5750 6050 5850 6150
-Entry Wire Line
 	5950 6050 6050 6150
 Entry Wire Line
 	6050 6050 6150 6150
@@ -233,10 +205,6 @@ Entry Wire Line
 	6150 6050 6250 6150
 Entry Wire Line
 	6250 6050 6350 6150
-Entry Wire Line
-	6350 6050 6450 6150
-Entry Wire Line
-	6450 6050 6550 6150
 Text Label 3400 1800 0    50   Italic 0
 RDY
 Wire Wire Line
@@ -415,9 +383,9 @@ Wire Wire Line
 Wire Wire Line
 	8150 3150 7750 3150
 Text Label 7750 1850 0    50   ~ 0
-VIN_TFT
+VIN
 Text Label 7750 2550 0    50   ~ 0
-VIN_TFT
+VIN
 Entry Wire Line
 	7150 2250 7250 2350
 Wire Wire Line
@@ -684,12 +652,12 @@ Wire Wire Line
 $Comp
 L Connector:Barrel_Jack J2
 U 1 1 611393FD
-P 6400 1050
-F 0 "J2" H 6457 1375 50  0000 C CNN
-F 1 "Barrel_Jack" H 6457 1284 50  0000 C CNN
-F 2 "" H 6450 1010 50  0001 C CNN
-F 3 "~" H 6450 1010 50  0001 C CNN
-	1    6400 1050
+P 5450 1150
+F 0 "J2" H 5507 1475 50  0000 C CNN
+F 1 "Barrel_Jack" H 5507 1384 50  0000 C CNN
+F 2 "" H 5500 1110 50  0001 C CNN
+F 3 "~" H 5500 1110 50  0001 C CNN
+	1    5450 1150
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -854,6 +822,28 @@ Wire Wire Line
 	2000 5400 2000 4550
 Wire Wire Line
 	2000 4550 1700 4550
+$Comp
+L Connector_Generic:Conn_01x02 tc_flat_connector1
+U 1 1 61245535
+P 4800 7300
+F 0 "tc_flat_connector1" V 5000 7550 50  0000 R CNN
+F 1 "Conn_01x02" V 4900 7450 50  0000 R CNN
+F 2 "" H 4800 7300 50  0001 C CNN
+F 3 "~" H 4800 7300 50  0001 C CNN
+	1    4800 7300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x02 tc_flat_connector2
+U 1 1 61247BB6
+P 6100 7300
+F 0 "tc_flat_connector2" V 6300 7550 50  0000 R CNN
+F 1 "Conn_01x02" V 6200 7450 50  0000 R CNN
+F 2 "" H 6100 7300 50  0001 C CNN
+F 3 "~" H 6100 7300 50  0001 C CNN
+	1    6100 7300
+	0    -1   -1   0   
+$EndComp
 Wire Wire Line
 	6800 2350 7450 2350
 Wire Wire Line
@@ -888,26 +878,4 @@ Wire Bus Line
 	7650 1650 7650 3050
 Wire Bus Line
 	3650 1650 3650 6050
-$Comp
-L Connector_Generic:Conn_01x02 tc_flat_connector1
-U 1 1 61245535
-P 4800 7300
-F 0 "tc_flat_connector1" V 5000 7550 50  0000 R CNN
-F 1 "Conn_01x02" V 4900 7450 50  0000 R CNN
-F 2 "" H 4800 7300 50  0001 C CNN
-F 3 "~" H 4800 7300 50  0001 C CNN
-	1    4800 7300
-	0    -1   -1   0   
-$EndComp
-$Comp
-L Connector_Generic:Conn_01x02 tc_flat_connector2
-U 1 1 61247BB6
-P 6100 7300
-F 0 "tc_flat_connector2" V 6300 7550 50  0000 R CNN
-F 1 "Conn_01x02" V 6200 7450 50  0000 R CNN
-F 2 "" H 6100 7300 50  0001 C CNN
-F 3 "~" H 6100 7300 50  0001 C CNN
-	1    6100 7300
-	0    -1   -1   0   
-$EndComp
 $EndSCHEMATC

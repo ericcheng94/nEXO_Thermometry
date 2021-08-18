@@ -6,3 +6,5 @@ Current TODO:
 - Fix NativeEthernet locking issue
 - Prevent LCD burn in
 
+Future feature adds:
+- Utilize ILI9341 touch feature for interactive display

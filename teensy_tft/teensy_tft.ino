@@ -8,15 +8,18 @@
 #include <ArduinoRS485.h> // ArduinoModbus depends on the ArduinoRS485 library
 #include <ArduinoModbus.h>
 
-Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(10);
-Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(5);
-// Adafruit_MAX31865 rtd03 = Adafruit_MAX31865(6);
-// Adafruit_MAX31865 rtd04 = Adafruit_MAX31865(7);
-// Adafruit_MAX31865 rtd05 = Adafruit_MAX31865(8);
+Adafruit_MAX31865 rtd01 = Adafruit_MAX31865(35);
+Adafruit_MAX31865 rtd02 = Adafruit_MAX31865(41);
+// Adafruit_MAX31865 rtd03 = Adafruit_MAX31865(18);
+// Adafruit_MAX31865 rtd04 = Adafruit_MAX31865(34);
+// Adafruit_MAX31865 rtd05 = Adafruit_MAX31865(33);
 
 // Thermocouple ADC
-Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(36);
-// Adafruit_MAX31856 tcp02 = Adafruit_MAX31856(37);
+Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(24);
+// Adafruit_MAX31856 tcp02 = Adafruit_MAX31856(29);
+
+// BME280
+// pin (27)
 
 // The value of the Rref resistor. Use 430.0 for PT100 and 4300.0 for PT1000
 #define RREF      430.0
@@ -24,8 +27,10 @@ Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(36);
 // 100.0 for PT100, 1000.0 for PT1000
 #define RNOMINAL  100.0
 
-#define TFT_DC  9
-#define TFT_CS 35
+#define TFT_DC 36
+#define TFT_CS 40
+#define T_CS 37
+#define T_IRQ 39
 ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
 
 // Enter a MAC address for your controller below.
@@ -44,7 +49,7 @@ uint32_t updateSerialMillis;
 uint32_t updateDisplayMillis;
 //uint32_t display1Millis;
 //uint32_t display2Millis;
-unsigned int  heartbeat;
+// unsigned int  heartbeat;
 
 // Global variables to make current sensor temps available to every function
 float rtd01temp;
@@ -65,7 +70,7 @@ const int tcp01_reg1 = 0x05;
 const int tcp01_reg2 = 0x06;
 const int tcp02_reg1 = 0x07;
 const int tcp02_reg2 = 0x08;
-const int tick_tock = 0x09;
+// const int tick_tock = 0x09;
 
 void setup() {
   Serial.begin(115200);

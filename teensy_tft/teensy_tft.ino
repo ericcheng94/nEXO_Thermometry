@@ -1,5 +1,6 @@
 #include <Adafruit_MAX31865.h>
 #include <Adafruit_MAX31856.h>
+#include <Adafruit_BME280.h>
 #include <Wire.h>
 #include <SPI.h>
 #include "ILI9341_t3.h"
@@ -19,7 +20,7 @@ Adafruit_MAX31856 tcp01 = Adafruit_MAX31856(24);
 // Adafruit_MAX31856 tcp02 = Adafruit_MAX31856(29);
 
 // BME280
-// pin (27)
+Adafruit_BME280 bme(27); // hardware SPI
 
 // The value of the Rref resistor. Use 430.0 for PT100 and 4300.0 for PT1000
 #define RREF      430.0
@@ -59,6 +60,7 @@ float rtd04temp;
 float rtd05temp;
 float tcp01temp;
 float tcp02temp;
+float bmeTemp;
 
 //Modbus holding register address mapping
 const int rtd01_reg = 0x00;
@@ -112,6 +114,13 @@ void setup() {
     Serial.println("Failed to start Modbus TCP Server!");
     while (1);
   }
+
+  // initialize BME280 sensor
+  bme.begin();
+//  if (!bme.begin()) {  
+//    Serial.println("Could not find a valid BME280 sensor, check wiring!");
+//    while (1);
+//  }
 
   // configure 7 holding registers at address 0x00
   modbusTCPServer.configureHoldingRegisters(0x00, 10);
@@ -175,8 +184,8 @@ void loop() {
        }
 
        if (currentMillis - updateDisplayMillis > 1000) {
-         updateDisplay(rtd01temp, rtd02temp, tcp01temp);
-//  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp);
+         updateDisplay(rtd01temp, rtd02temp, tcp01temp, bmeTemp);
+//  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp, bmeTemp);
          updateDisplayMillis = currentMillis;
        }
      }
@@ -189,8 +198,10 @@ void loop() {
 //         rtd05temp = rtd05.temperature(RNOMINAL, RREF);
   tcp01temp = tcp01.readThermocoupleTemperature();
 //         tcp02temp = tcp02.readThermocoupleTemperature();
-  updateDisplay(rtd01temp, rtd02temp, tcp01temp);
-//  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp);
+  bmeTemp = bme.readTemperature();
+
+  updateDisplay(rtd01temp, rtd02temp, tcp01temp, bmeTemp);
+//  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp, bmeTemp);
   delay(250); // TODO Change to millis
 }
 
@@ -228,12 +239,13 @@ void  updateSerial() {
   Serial.println();
 }
 
-void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
+void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp, float bmeTemp) {
   rtd01temp += 273.15;
   rtd02temp += 273.15;
   tcp01temp += 273.15;
+  bmeTemp += 273.15;
 
-
+  tft.setTextSize(3);
   tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   tft.setCursor(10, 10);
   tft.print("RTD_01:"); tft.print(rtd01temp); tft.println(" K");
@@ -247,10 +259,15 @@ void updateDisplay(float rtd01temp, float rtd02temp, float tcp01temp) {
   tft.print("RTD_05:"); tft.print("--"); tft.println(" K");
 
   tft.setTextColor(ILI9341_YELLOW, ILI9341_BLACK);
-  tft.setCursor(10, 170);
+  tft.setCursor(10, 160);
   tft.print("TCP_01:"); tft.print(tcp01temp); tft.println(" K");
-  tft.setCursor(10, 200);
+  tft.setCursor(10, 190);
   tft.print("TCP_02:"); tft.print("--"); tft.println(" K");
+
+  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+  tft.setCursor(10, 220);
+  tft.setTextSize(2);
+  tft.print("BME_280:"); tft.print(bmeTemp); tft.println(" K");
 }
 
 void checkPTFault() {

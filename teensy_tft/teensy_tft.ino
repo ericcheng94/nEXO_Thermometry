@@ -1,4 +1,4 @@
-#include <Adafruit_MAX31865.h>
+statu#include <Adafruit_MAX31865.h>
 #include <Adafruit_MAX31856.h>
 #include <Adafruit_BME280.h>
 #include <Wire.h>
@@ -110,7 +110,7 @@ void setup() {
 
   // initialize BME280 sensor
   bme.begin();
-//  if (!bme.begin()) {  
+//  if (!bme.begin()) {
 //    Serial.println("Could not find a valid BME280 sensor, check wiring!");
 //    while (1);
 //  }
@@ -180,7 +180,7 @@ void loop() {
 
       if (currentMillis - updateSerialMillis > 2000) {
         updateSerial(rtd01temp, rtd02temp, tcp01temp, bmeTemp);
-//        updateSerial(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp, bmeTemp);     
+//        updateSerial(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp, bmeTemp);
         updateSerialMillis = currentMillis;
       }
 

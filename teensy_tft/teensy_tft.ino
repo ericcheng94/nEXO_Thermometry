@@ -1,4 +1,4 @@
-statu#include <Adafruit_MAX31865.h>
+#include <Adafruit_MAX31865.h>
 #include <Adafruit_MAX31856.h>
 #include <Adafruit_BME280.h>
 #include <Wire.h>
@@ -67,7 +67,9 @@ const int tcp01_reg1 = 0x05;
 const int tcp01_reg2 = 0x06;
 const int tcp02_reg1 = 0x07;
 const int tcp02_reg2 = 0x08;
-// const int tick_tock = 0x09;
+const int bme_reg1 = 0x09;
+const int bme_reg2 = 0x010;
+// const int tick_tock = 0x11;
 
 void setup() {
   Serial.begin(115200);
@@ -115,8 +117,8 @@ void setup() {
 //    while (1);
 //  }
 
-  // configure 10 holding registers at address 0x00
-  modbusTCPServer.configureHoldingRegisters(0x00, 10);
+  // configure 12 holding registers at address 0x00
+  modbusTCPServer.configureHoldingRegisters(0x00, 12);
 
   // Setup ILI9341 TFT LCD
   tft.fillScreen(ILI9341_BLACK);
@@ -164,16 +166,21 @@ void loop() {
 //        tcp02temp = tcp02.readThermocoupleTemperature();
         bmeTemp = bme.readTemperature();
 
+        // Change Celsius to Kelvin
         rtd01temp += 273.15;
         rtd02temp += 273.15;
+        rtd03temp += 273.15;
+        rtd04temp += 273.15;
+        rtd05temp += 273.15;
         tcp01temp += 273.15;
+        tcp02temp += 273.15;
         bmeTemp += 273.15;
 
         updateSensorsMillis = currentMillis;
       }
 
       if (currentMillis - updateClientMillis > 1000) {
-        updateClient(tcp01temp);
+        updateClient(tcp01temp, bmeTemp);
 //        updateClient(tcp01temp, tcp02temp);
         updateClientMillis = currentMillis;
       }
@@ -201,6 +208,16 @@ void loop() {
 //  tcp02temp = tcp02.readThermocoupleTemperature();
   bmeTemp = bme.readTemperature();
 
+  // Change Celsius to Kelvin
+  rtd01temp += 273.15;
+  rtd02temp += 273.15;
+  rtd03temp += 273.15;
+  rtd04temp += 273.15;
+  rtd05temp += 273.15;
+  tcp01temp += 273.15;
+  tcp02temp += 273.15;
+  bmeTemp += 273.15;
+
   updateDisplay(rtd01temp, rtd02temp, tcp01temp, bmeTemp);
 //  updateDisplay(rtd01temp, rtd02temp, rtd03temp, rtd04temp, rtd05temp, tcp01temp, tcp02temp, bmeTemp);
   delay(250); // TODO Change to millis
@@ -211,14 +228,17 @@ union {
     uint16_t asInt[2];
 } flreg;
 
-void updateClient(float tcp01temp) {
+void updateClient(float tcp01temp, float bmeTemp) {
   uint16_t rawRTD01 = rtd01.readRTD();
   uint16_t rawRTD02 = rtd02.readRTD();
-//  Serial.print("rtd01 raw = "); Serial.println(rawRTD01);
-//  Serial.print("rtd02 raw = "); Serial.println(rawRTD02);
-//  Serial.print("tcp temperature = "); Serial.println(tcp01temp);
+//  uint16_t rawRTD03 = rtd03.readRTD();
+//  uint16_t rawRTD04 = rtd04.readRTD();
+//  uint16_t rawRTD05 = rtd05.readRTD();
   modbusTCPServer.holdingRegisterWrite(rtd01_reg, rawRTD01);
   modbusTCPServer.holdingRegisterWrite(rtd02_reg, rawRTD02);
+//  modbusTCPServer.holdingRegisterWrite(rtd03_reg, rawRTD03);
+//  modbusTCPServer.holdingRegisterWrite(rtd04_reg, rawRTD04);
+//  modbusTCPServer.holdingRegisterWrite(rtd05_reg, rawRTD05);
 
   flreg.asFloat = tcp01temp;
   modbusTCPServer.holdingRegisterWrite(tcp01_reg1, flreg.asInt[1]);
@@ -226,6 +246,9 @@ void updateClient(float tcp01temp) {
 //  flreg.asFloat = tcp02temp;
 //  modbusTCPServer.holdingRegisterWrite(tcp02_reg1, flreg.asInt[1]);
 //  modbusTCPServer.holdingRegisterWrite(tcp02_reg2, flreg.asInt[0]);
+  flreg.asFloat = bmeTemp;
+  modbusTCPServer.holdingRegisterWrite(bme_reg1, flreg.asInt[1]);
+  modbusTCPServer.holdingRegisterWrite(bme_reg2, flreg.asInt[0]);
 }
 
 void  updateSerial(float rtd01temp, float rtd02temp, float tcp01temp, float bmeTemp) {
@@ -240,8 +263,8 @@ void  updateSerial(float rtd01temp, float rtd02temp, float tcp01temp, float bmeT
 //  Serial.print("RTD03 temperature : "); Serial.println(rtd03temp);
 //  Serial.print("RTD04 temperature : "); Serial.println(rtd04temp);
 //  Serial.print("RTD05 temperature : "); Serial.println(rtd05temp);
-  Serial.print("TC Temperature:     "); Serial.println(tcp01temp);
-//  Serial.print("TC Temperature:     "); Serial.println(tcp02temp);
+  Serial.print("TC01 Temperature:   "); Serial.println(tcp01temp);
+//  Serial.print("TC02 Temperature:     "); Serial.println(tcp02temp);
 //  Serial.print("TC Cold Junction:   "); Serial.println(tcp01.readCJTemperature());
   Serial.print("BME280 Temperature: "); Serial.println(bmeTemp);
   Serial.println();
